@@ -12,6 +12,7 @@ void playerMove(char);
 void computerMove(char);
 char checkWinner();
 void printWinner(char, char, char);
+void chooseSymbol(char*, char*);
 
 int main() {
     char winner = ' ';
@@ -20,32 +21,27 @@ int main() {
     char COMPUTER = ' ';
     int win_count = 0;
     int lose_count = 0;
+    int turn = 0;
 
     do {
         winner = ' ';
         response = ' ';
         PLAYER = ' ';
         COMPUTER = ' ';
+        turn = ' ';
 
         resetBoard();
 
-        while(winner == ' ' && checkFreeSpaces() != 0) {
-            printBoard();
+        printf("Choose your turn (1 for player first, 2 for computer first):\n");
+        scanf(" %d", &turn);
 
-            if (PLAYER == ' ' && COMPUTER == ' ') {
-                printf("Choose a side (X or O):");
-                scanf(" %c", &PLAYER);
-                PLAYER = toupper(PLAYER);
-                if (PLAYER == 'X') {
-                    COMPUTER = 'O';
-                } else if (PLAYER == 'O') {
-                    COMPUTER = 'X';
-                } else {
-                    printf("Invalid input. Defaulting to X.\n");
-                    PLAYER = 'X';
-                    COMPUTER = 'O';
-                }
-            }
+        if (PLAYER == ' ' && COMPUTER == ' ') {
+            chooseSymbol(&PLAYER, &COMPUTER);
+        }
+
+        if (turn == 1) {
+            while(winner == ' ' && checkFreeSpaces() != 0) {
+                printBoard();
 
                 playerMove(PLAYER);
                 winner = checkWinner();
@@ -58,25 +54,49 @@ int main() {
                     break;
                 }
             }
-            printBoard();
-            printWinner(winner, PLAYER, COMPUTER);
-            if (winner == PLAYER) {
-                win_count++;
-            }
-            else if (winner == COMPUTER) {
-                lose_count++;
+        }
+        else if (turn == 2) {
+            if (PLAYER == ' ' && COMPUTER == ' ') {
+                chooseSymbol(&PLAYER, &COMPUTER);
             }
 
-            printf("\nWould you like to play again? (Y/N):");
-            scanf(" %c", &response);
-            response = toupper(response);
-        } while (response == 'Y');
+                computerMove(COMPUTER);
+                while(winner == ' ' && checkFreeSpaces() != 0) {
+                    printBoard();
 
-        printf("Thanks for playing!\n");
-        printf("Win Count: %d\n", win_count);
-        printf("Lose Count: %d\n", lose_count);
+                    playerMove(PLAYER);
+                    winner = checkWinner();
+                    if(winner != ' ' || checkFreeSpaces() == 0) {
+                        break;
+                    }
+                    computerMove(COMPUTER);
+                    winner = checkWinner();
+                    if(winner != ' ' || checkFreeSpaces() == 0) {
+                        break;
+                    }
+                }
+            }
 
-        return 0;
+
+        printBoard();
+        printWinner(winner, PLAYER, COMPUTER);
+        if (winner == PLAYER) {
+            win_count++;
+        }
+        else if (winner == COMPUTER) {
+            lose_count++;
+        }
+
+        printf("\nWould you like to play again? (Y/N):");
+        scanf(" %c", &response);
+        response = toupper(response);
+    } while (response == 'Y');
+
+    printf("Thanks for playing!\n");
+    printf("Win Count: %d\n", win_count);
+    printf("Lose Count: %d\n", lose_count);
+
+    return 0;
 }
 
 void resetBoard() {
@@ -126,7 +146,7 @@ void playerMove(char PLAYER) {
             board[x][y] = PLAYER;
             break;
         }
-    }while(board[x][y != ' ']);
+    }while(board[x][y] != ' ');
 }
 void computerMove(char COMPUTER) {
     // creates a seed based on current time
@@ -179,5 +199,23 @@ void printWinner(char winner, char PLAYER, char COMPUTER) {
     }
     else {
         printf("IT'S A TIE!");
+    }
+}
+void chooseSymbol(char* PLAYER, char* COMPUTER) {
+    char symbol;
+    printf("Choose a side (X or O):");
+    scanf(" %c", &symbol);
+    symbol = toupper(symbol);
+
+    if (symbol == 'X') {
+        *PLAYER = 'X';
+        *COMPUTER = 'O';
+    } else if (symbol == 'O') {
+        *PLAYER = 'O';
+        *COMPUTER = 'X';
+    } else {
+        printf("Invalid input. Defaulting to X.\n");
+        *PLAYER = 'X';
+        *COMPUTER = 'O';
     }
 }
