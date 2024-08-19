@@ -4,52 +4,79 @@
 #include <time.h>
 
 char board[3][3];
-const char PLAYER = 'X';
-const char COMPUTER = 'O';
 
 void resetBoard();
 void printBoard();
 int checkFreeSpaces();
-void playerMove();
-void computerMove();
+void playerMove(char);
+void computerMove(char);
 char checkWinner();
-void printWinner(char);
+void printWinner(char, char, char);
 
 int main() {
     char winner = ' ';
     char response = ' ';
+    char PLAYER = ' ';
+    char COMPUTER = ' ';
+    int win_count = 0;
+    int lose_count = 0;
 
     do {
         winner = ' ';
         response = ' ';
+        PLAYER = ' ';
+        COMPUTER = ' ';
 
         resetBoard();
 
         while(winner == ' ' && checkFreeSpaces() != 0) {
             printBoard();
 
-            playerMove();
-            winner = checkWinner();
-            if(winner != ' ' || checkFreeSpaces() == 0) {
-                break;
+            if (PLAYER == ' ' && COMPUTER == ' ') {
+                printf("Choose a side (X or O):");
+                scanf(" %c", &PLAYER);
+                PLAYER = toupper(PLAYER);
+                if (PLAYER == 'X') {
+                    COMPUTER = 'O';
+                } else if (PLAYER == 'O') {
+                    COMPUTER = 'X';
+                } else {
+                    printf("Invalid input. Defaulting to X.\n");
+                    PLAYER = 'X';
+                    COMPUTER = 'O';
+                }
             }
-            computerMove();
-            winner = checkWinner();
-            if(winner != ' ' || checkFreeSpaces() == 0) {
-                break;
+
+                playerMove(PLAYER);
+                winner = checkWinner();
+                if(winner != ' ' || checkFreeSpaces() == 0) {
+                    break;
+                }
+                computerMove(COMPUTER);
+                winner = checkWinner();
+                if(winner != ' ' || checkFreeSpaces() == 0) {
+                    break;
+                }
             }
-        }
-        printBoard();
-        printWinner(winner);
+            printBoard();
+            printWinner(winner, PLAYER, COMPUTER);
+            if (winner == PLAYER) {
+                win_count++;
+            }
+            else if (winner == COMPUTER) {
+                lose_count++;
+            }
 
-        printf("\nWould you like to play again? (Y/N): ");
-        scanf(" %c", &response);
-        response = toupper(response);
-    } while (response == 'Y');
+            printf("\nWould you like to play again? (Y/N):");
+            scanf(" %c", &response);
+            response = toupper(response);
+        } while (response == 'Y');
 
-    printf("Thanks for playing!");
+        printf("Thanks for playing!\n");
+        printf("Win Count: %d\n", win_count);
+        printf("Lose Count: %d\n", lose_count);
 
-    return 0;
+        return 0;
 }
 
 void resetBoard() {
@@ -79,7 +106,7 @@ int checkFreeSpaces() {
     }
     return freeSpaces;
 }
-void playerMove() {
+void playerMove(char PLAYER) {
     int x;
     int y;
 
@@ -101,7 +128,7 @@ void playerMove() {
         }
     }while(board[x][y != ' ']);
 }
-void computerMove() {
+void computerMove(char COMPUTER) {
     // creates a seed based on current time
     srand(time(0));
     int x;
@@ -116,7 +143,7 @@ void computerMove() {
         board[x][y] = COMPUTER;
     }
     else {
-        printWinner(' ');
+        printWinner(' ', ' ', ' ');
     }
 }
 char checkWinner() {
@@ -143,7 +170,7 @@ char checkWinner() {
 
     return ' ';
 }
-void printWinner(char winner) {
+void printWinner(char winner, char PLAYER, char COMPUTER) {
     if(winner == PLAYER) {
         printf("YOU WIN!");
     }
