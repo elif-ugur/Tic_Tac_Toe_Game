@@ -13,6 +13,10 @@ void computerMove(char);
 char checkWinner();
 void printWinner(char, char, char);
 void chooseSymbol(char*, char*);
+void easyMode(int, char*, char, char);
+void hardMode(int, char*, char, char);
+void computerMoveHard(char);
+
 
 int main() {
     char winner = ' ';
@@ -21,16 +25,27 @@ int main() {
     char COMPUTER = ' ';
     int win_count = 0;
     int lose_count = 0;
+    int tie_count = 0;
     int turn = 0;
+    char difficulty = ' ';
 
     do {
         winner = ' ';
         response = ' ';
         PLAYER = ' ';
         COMPUTER = ' ';
-        turn = ' ';
+        turn = 0;
 
         resetBoard();
+
+        printf("Choose the difficulty (e for easy / h for hard):\n");
+        scanf(" %c", &difficulty);
+        difficulty = tolower(difficulty);
+
+        if (difficulty != 'e' && difficulty != 'h') {
+            printf("Invalid input\n");
+            continue;
+        }
 
         printf("Choose your turn (1 for player first, 2 for computer first):\n");
         scanf(" %d", &turn);
@@ -39,44 +54,12 @@ int main() {
             chooseSymbol(&PLAYER, &COMPUTER);
         }
 
-        if (turn == 1) {
-            while(winner == ' ' && checkFreeSpaces() != 0) {
-                printBoard();
-
-                playerMove(PLAYER);
-                winner = checkWinner();
-                if(winner != ' ' || checkFreeSpaces() == 0) {
-                    break;
-                }
-                computerMove(COMPUTER);
-                winner = checkWinner();
-                if(winner != ' ' || checkFreeSpaces() == 0) {
-                    break;
-                }
-            }
+        if (difficulty == 'e') {
+            easyMode(turn, &winner, PLAYER, COMPUTER);
         }
-        else if (turn == 2) {
-            if (PLAYER == ' ' && COMPUTER == ' ') {
-                chooseSymbol(&PLAYER, &COMPUTER);
-            }
-
-                computerMove(COMPUTER);
-                while(winner == ' ' && checkFreeSpaces() != 0) {
-                    printBoard();
-
-                    playerMove(PLAYER);
-                    winner = checkWinner();
-                    if(winner != ' ' || checkFreeSpaces() == 0) {
-                        break;
-                    }
-                    computerMove(COMPUTER);
-                    winner = checkWinner();
-                    if(winner != ' ' || checkFreeSpaces() == 0) {
-                        break;
-                    }
-                }
-            }
-
+        else if (difficulty == 'h') {
+            hardMode(turn, &winner, PLAYER, COMPUTER);
+        }
 
         printBoard();
         printWinner(winner, PLAYER, COMPUTER);
@@ -86,6 +69,9 @@ int main() {
         else if (winner == COMPUTER) {
             lose_count++;
         }
+        else {
+            tie_count++;
+        }
 
         printf("\nWould you like to play again? (Y/N):");
         scanf(" %c", &response);
@@ -94,6 +80,7 @@ int main() {
 
     printf("Thanks for playing!\n");
     printf("Win Count: %d\n", win_count);
+    printf("Tie Count: %d\n", tie_count);
     printf("Lose Count: %d\n", lose_count);
 
     return 0;
@@ -217,5 +204,116 @@ void chooseSymbol(char* PLAYER, char* COMPUTER) {
         printf("Invalid input. Defaulting to X.\n");
         *PLAYER = 'X';
         *COMPUTER = 'O';
+    }
+}
+void easyMode(int turn, char* winner, char PLAYER, char COMPUTER) {
+    if (turn == 1) {
+        while(*winner == ' ' && checkFreeSpaces() != 0) {
+            printBoard();
+
+            playerMove(PLAYER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+            computerMove(COMPUTER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+        }
+    }
+    else if (turn == 2) {
+        if (PLAYER == ' ' && COMPUTER == ' ') {
+            chooseSymbol(&PLAYER, &COMPUTER);
+        }
+
+        computerMove(COMPUTER);
+        while(*winner == ' ' && checkFreeSpaces() != 0) {
+            printBoard();
+
+            playerMove(PLAYER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+            computerMove(COMPUTER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+        }
+    }
+}
+void hardMode(int turn, char* winner, char PLAYER, char COMPUTER) {
+    if (turn == 1) {
+        while(*winner == ' ' && checkFreeSpaces() > 0) {
+            printBoard();
+
+            playerMove(PLAYER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+            computerMoveHard(COMPUTER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+        }
+    }
+    else if (turn == 2) {
+        if (PLAYER == ' ' && COMPUTER == ' ') {
+            chooseSymbol(&PLAYER, &COMPUTER);
+        }
+        computerMoveHard(COMPUTER);
+        while(*winner == ' ' && checkFreeSpaces() != 0) {
+            printBoard();
+
+            playerMove(PLAYER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+            computerMoveHard(COMPUTER);
+            *winner = checkWinner();
+            if(*winner != ' ' || checkFreeSpaces() == 0) {
+                break;
+            }
+        }
+    }
+}
+void computerMoveHard(char COMPUTER) {
+    int x;
+    int y;
+    int alternative_moves[][2] = {{0, 0}, {0, 2}, {2, 0}, {2, 2}};
+    int size1 = sizeof(alternative_moves)/sizeof(alternative_moves[0]);
+    int empty_alternative_moves[size1][2];
+    int size2 = 0;
+
+
+    if(board[1][1] == ' ') {
+        board[1][1] = COMPUTER;
+        return;
+    }
+
+    for(int i = 0; i < size1; i++) {
+        x = alternative_moves[i][0];
+        y = alternative_moves[i][1];
+        if(board[x][y] == ' ') {
+            empty_alternative_moves[size2][0] = x;
+            empty_alternative_moves[size2][1] = y;
+            size2++;
+        }
+    }
+
+    if (size2 > 0) {
+        int random = rand() %size2;
+        x  = empty_alternative_moves[random][0];
+        y  = empty_alternative_moves[random][1];
+        board[x][y] = COMPUTER;
+    }
+    else {
+        computerMove(COMPUTER);
     }
 }
