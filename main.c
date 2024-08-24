@@ -9,13 +9,15 @@ void resetBoard();
 void printBoard();
 int checkFreeSpaces();
 void playerMove(char);
-void computerMove(char);
+void computerMove(char, int, char);
 char checkWinner();
 void printWinner(char, char, char);
 void chooseSymbol(char*, char*);
-void easyMode(int, char*, char, char);
-void hardMode(int, char*, char, char);
-void computerMoveHard(char);
+void firstMode(int, char*, char, char, int);
+void secondMode(int, char*, char, char, int);
+void thirdMode(int, char*, char, char, int);
+void playingSequence(int, char*, char, char, int);
+int minimax(char[3][3], int, int, char, char);
 
 
 int main() {
@@ -27,7 +29,7 @@ int main() {
     int lose_count = 0;
     int tie_count = 0;
     int turn = 0;
-    char difficulty = ' ';
+    int difficulty = 0;
 
     do {
         winner = ' ';
@@ -38,11 +40,10 @@ int main() {
 
         resetBoard();
 
-        printf("Choose the difficulty (e for easy / h for hard):\n");
-        scanf(" %c", &difficulty);
-        difficulty = tolower(difficulty);
+        printf("Choose the difficulty (1/2/3):\n");
+        scanf(" %d", &difficulty);
 
-        if (difficulty != 'e' && difficulty != 'h') {
+        if (difficulty != 1 && difficulty != 2 && difficulty != 3){
             printf("Invalid input\n");
             continue;
         }
@@ -54,11 +55,14 @@ int main() {
             chooseSymbol(&PLAYER, &COMPUTER);
         }
 
-        if (difficulty == 'e') {
-            easyMode(turn, &winner, PLAYER, COMPUTER);
+        if (difficulty == 1) {
+            firstMode(turn, &winner, PLAYER, COMPUTER, difficulty);
         }
-        else if (difficulty == 'h') {
-            hardMode(turn, &winner, PLAYER, COMPUTER);
+        else if (difficulty == 2) {
+            secondMode(turn, &winner, PLAYER, COMPUTER, difficulty);
+        }
+        else if (difficulty == 3) {
+            thirdMode(turn, &winner, PLAYER, COMPUTER, difficulty);
         }
 
         printBoard();
@@ -135,22 +139,77 @@ void playerMove(char PLAYER) {
         }
     }while(board[x][y] != ' ');
 }
-void computerMove(char COMPUTER) {
-    // creates a seed based on current time
-    srand(time(0));
-    int x;
-    int y;
+void computerMove(char COMPUTER, int difficulty, char PLAYER) {
+    if (difficulty == 1) {
+        srand(time(0));
+        int x;
+        int y;
 
-    if(checkFreeSpaces() > 0) {
-        do {
-            x = rand() % 3;
-            y = rand() % 3;
-        }while(board[x][y] != ' ');
+        if(checkFreeSpaces() > 0) {
+            do {
+                x = rand() % 3;
+                y = rand() % 3;
+            }while(board[x][y] != ' ');
 
-        board[x][y] = COMPUTER;
+            board[x][y] = COMPUTER;
+        }
+        else {
+            printWinner(' ', ' ', ' ');
+        }
     }
-    else {
-        printWinner(' ', ' ', ' ');
+    else if (difficulty == 2) {
+        int x;
+        int y;
+        int alternative_moves[][2] = {{0, 0}, {0, 2}, {2, 0}, {2, 2}};
+        int size1 = sizeof(alternative_moves)/sizeof(alternative_moves[0]);
+        int empty_alternative_moves[size1][2];
+        int size2 = 0;
+
+
+        if(board[1][1] == ' ') {
+            board[1][1] = COMPUTER;
+            return;
+        }
+
+        for(int i = 0; i < size1; i++) {
+            x = alternative_moves[i][0];
+            y = alternative_moves[i][1];
+            if(board[x][y] == ' ') {
+                empty_alternative_moves[size2][0] = x;
+                empty_alternative_moves[size2][1] = y;
+                size2++;
+            }
+        }
+
+        if (size2 > 0) {
+            int random = rand() %size2;
+            x  = empty_alternative_moves[random][0];
+            y  = empty_alternative_moves[random][1];
+            board[x][y] = COMPUTER;
+        }
+        else {
+            computerMove(COMPUTER, difficulty, PLAYER);
+        }
+    }
+    else if (difficulty == 3) {
+        int bestScore = -1000;
+        int move[2] = {-1, -1};
+
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++) {
+                if(board[i][j] == ' ') {
+                    board[i][j] = COMPUTER;
+                    int score = minimax(board, 0, 0, COMPUTER, PLAYER);
+                    board[i][j] = ' ';
+                    if(score > bestScore) {
+                        bestScore = score;
+                        move[0] = i;
+                        move[1] = j;
+                    }
+                }
+            }
+        }
+        board[move[0]][move[1]] = COMPUTER;
     }
 }
 char checkWinner() {
@@ -206,7 +265,18 @@ void chooseSymbol(char* PLAYER, char* COMPUTER) {
         *COMPUTER = 'O';
     }
 }
-void easyMode(int turn, char* winner, char PLAYER, char COMPUTER) {
+void firstMode(int turn, char* winner, char PLAYER, char COMPUTER, int difficulty) {
+    playingSequence(turn, winner, PLAYER, COMPUTER, difficulty);
+}
+void secondMode(int turn, char* winner, char PLAYER, char COMPUTER, int difficulty) {
+    playingSequence(turn, winner, PLAYER, COMPUTER, difficulty);
+}
+
+void thirdMode(int turn, char* winner, char PLAYER, char COMPUTER, int difficulty) {
+    playingSequence(turn, winner, PLAYER, COMPUTER, difficulty);
+}
+
+void playingSequence(int turn, char* winner, char PLAYER, char COMPUTER, int difficulty) {
     if (turn == 1) {
         while(*winner == ' ' && checkFreeSpaces() != 0) {
             printBoard();
@@ -216,7 +286,7 @@ void easyMode(int turn, char* winner, char PLAYER, char COMPUTER) {
             if(*winner != ' ' || checkFreeSpaces() == 0) {
                 break;
             }
-            computerMove(COMPUTER);
+            computerMove(COMPUTER, difficulty, PLAYER);
             *winner = checkWinner();
             if(*winner != ' ' || checkFreeSpaces() == 0) {
                 break;
@@ -228,92 +298,70 @@ void easyMode(int turn, char* winner, char PLAYER, char COMPUTER) {
             chooseSymbol(&PLAYER, &COMPUTER);
         }
 
-        computerMove(COMPUTER);
-        while(*winner == ' ' && checkFreeSpaces() != 0) {
+        computerMove(COMPUTER, difficulty, PLAYER);
+        *winner = checkWinner();
+        if (*winner != ' ' || checkFreeSpaces() == 0) {
+            printBoard();
+            printWinner(*winner, PLAYER, COMPUTER);
+            return;
+        }
+
+        while (*winner == ' ' && checkFreeSpaces() != 0) {
             printBoard();
 
             playerMove(PLAYER);
             *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
+            if (*winner != ' ' || checkFreeSpaces() == 0) {
                 break;
             }
-            computerMove(COMPUTER);
+
+            computerMove(COMPUTER, difficulty, PLAYER);
             *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
+            if (*winner != ' ' || checkFreeSpaces() == 0) {
                 break;
             }
         }
     }
 }
-void hardMode(int turn, char* winner, char PLAYER, char COMPUTER) {
-    if (turn == 1) {
-        while(*winner == ' ' && checkFreeSpaces() > 0) {
-            printBoard();
 
-            playerMove(PLAYER);
-            *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
-                break;
+int minimax(char board[3][3], int depth, int isMaximizing, char COMPUTER, char PLAYER) {
+    int result = checkWinner();
+    if (result == COMPUTER) {
+        return 10 - depth;
+    }
+    else if (result == PLAYER) {
+        return depth - 10;
+    }
+    else if (checkFreeSpaces() == 0) {
+        return 0;
+    }
+
+    if(isMaximizing) {
+        int bestScore = -1000;
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++) {
+                if(board[i][j] == ' ') {
+                    board[i][j] = COMPUTER;
+                    int score = minimax(board, depth + 1, 0, COMPUTER, PLAYER);
+                    board[i][j] = ' ';
+                    bestScore = (score > bestScore) ? score : bestScore;
+                    }
+                }
             }
-            computerMoveHard(COMPUTER);
-            *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
-                break;
-            }
+        return bestScore;
         }
-    }
-    else if (turn == 2) {
-        if (PLAYER == ' ' && COMPUTER == ' ') {
-            chooseSymbol(&PLAYER, &COMPUTER);
-        }
-        computerMoveHard(COMPUTER);
-        while(*winner == ' ' && checkFreeSpaces() != 0) {
-            printBoard();
-
-            playerMove(PLAYER);
-            *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
-                break;
-            }
-            computerMoveHard(COMPUTER);
-            *winner = checkWinner();
-            if(*winner != ' ' || checkFreeSpaces() == 0) {
-                break;
-            }
-        }
-    }
-}
-void computerMoveHard(char COMPUTER) {
-    int x;
-    int y;
-    int alternative_moves[][2] = {{0, 0}, {0, 2}, {2, 0}, {2, 2}};
-    int size1 = sizeof(alternative_moves)/sizeof(alternative_moves[0]);
-    int empty_alternative_moves[size1][2];
-    int size2 = 0;
-
-
-    if(board[1][1] == ' ') {
-        board[1][1] = COMPUTER;
-        return;
-    }
-
-    for(int i = 0; i < size1; i++) {
-        x = alternative_moves[i][0];
-        y = alternative_moves[i][1];
-        if(board[x][y] == ' ') {
-            empty_alternative_moves[size2][0] = x;
-            empty_alternative_moves[size2][1] = y;
-            size2++;
-        }
-    }
-
-    if (size2 > 0) {
-        int random = rand() %size2;
-        x  = empty_alternative_moves[random][0];
-        y  = empty_alternative_moves[random][1];
-        board[x][y] = COMPUTER;
-    }
     else {
-        computerMove(COMPUTER);
+        int bestScore = 1000;
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++) {
+                if(board[i][j] == ' ') {
+                    board[i][j] = PLAYER;
+                    int score = minimax(board, depth + 1, 1, COMPUTER, PLAYER);
+                    board[i][j] = ' ';
+                    bestScore = (score < bestScore) ? score : bestScore;
+                }
+            }
+        }
+        return bestScore;
     }
 }
